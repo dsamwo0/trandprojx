@@ -33,57 +33,30 @@
             transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s ease;
         }
 
-        .bg-dark-header { background-color: var(--bg-header); transition: background-color 0.4s ease; }
-        .bg-card-custom { background-color: var(--bg-card); transition: background-color 0.4s ease; }
+        .bg-dark-header { background-color: var(--bg-header); }
+        .bg-card-custom { background-color: var(--bg-card); }
         
         .card-gradient {
-            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.8) 100%);
+            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
         }
         
         .category-scroll::-webkit-scrollbar { display: none; }
         
         .active-tab { background-color: #ffc107 !important; color: #000 !important; font-weight: bold; transform: scale(1.05); }
         
-        .live-badge { background-color: #ff4b4b; animation: pulse 2s infinite; }
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
         .bintv-card {
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease;
             border: 2px solid transparent;
             cursor: pointer;
         }
 
         .bintv-card:hover {
-            transform: translateY(-8px) scale(1.02);
+            transform: translateY(-8px);
             border-color: #ffc107;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
-        .bintv-card:active {
-            transform: translateY(-4px) scale(0.98);
-        }
-
-        .nav-item { 
-            cursor: pointer; 
-            transition: all 0.2s ease; 
-        }
+        #video-modal.hidden { display: none; }
         
-        .nav-item:active { transform: scale(0.9); }
-
-        #video-modal {
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-        #video-modal.hidden {
-            opacity: 0;
-            visibility: hidden;
-            display: none;
-        }
-        
-        /* Shimmer Loading Effect */
         .shimmer {
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
             background-size: 200% 100%;
@@ -94,194 +67,226 @@
             100% { background-position: 200% 0; }
         }
 
-        .team-logo {
-            filter: drop-shadow(0 0 8px rgba(0,0,0,0.5));
+        .team-logo-img {
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+            max-width: 40px;
+            max-height: 40px;
         }
     </style>
 </head>
 <body class="p-0 m-0 overflow-x-hidden">
 
-    <!-- Header & Search -->
+    <!-- Header -->
     <header class="bg-dark-header p-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-50 border-b border-gray-800/20 shadow-lg">
         <div class="flex items-center gap-2 cursor-pointer" onclick="location.reload()">
-            <div class="bg-blue-600 w-10 h-10 rounded flex items-center justify-center font-bold text-xl text-white shadow-lg">B</div>
+            <div class="bg-blue-600 w-10 h-10 rounded flex items-center justify-center font-bold text-xl text-white">B</div>
             <span class="text-2xl font-bold tracking-tighter">BINTV</span>
         </div>
         
         <div class="relative w-full max-w-xl group">
-            <input type="text" id="search-input" onkeyup="filterEvents()" placeholder="ค้นหาทีม ลีก หรือการถ่ายทอดสด..." class="w-full bg-gray-500/10 border border-transparent rounded-md py-2 px-10 focus:ring-2 focus:ring-yellow-500 focus:bg-gray-500/20 outline-none text-sm text-inherit transition-all">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400 group-focus-within:text-yellow-500 transition-colors"></i>
+            <input type="text" id="search-input" onkeyup="filterEvents()" placeholder="Search team, league, or sport..." class="w-full bg-gray-500/10 border border-transparent rounded-md py-2 px-10 focus:ring-2 focus:ring-yellow-500 outline-none text-sm text-inherit">
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+        </div>
+
+        <div class="bg-red-500/10 border border-red-500/30 px-4 py-2 rounded-full text-[10px] font-bold text-red-500 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+            <span id="view-count">12</span> WATCHING NOW
         </div>
     </header>
 
-    <!-- Categories Navigation -->
-    <nav class="bg-dark-header border-t border-gray-800/20 overflow-x-auto category-scroll px-4 py-3 shadow-md sticky top-[72px] z-40">
+    <!-- Categories -->
+    <nav class="bg-dark-header border-t border-gray-800/20 overflow-x-auto category-scroll px-4 py-3 sticky top-[72px] z-40">
         <div id="category-nav" class="flex items-center gap-4 min-w-max text-white">
-            <div onclick="filterByCategory('all', this)" class="nav-item active-tab px-5 py-2 rounded-lg text-sm uppercase">All Sports</div>
-            <!-- Dynamic categories will be loaded here -->
+            <div id="cat-all" onclick="loadPopularMatches(this)" class="nav-item active-tab px-5 py-2 rounded-lg text-sm uppercase">Popular</div>
         </div>
     </nav>
 
-    <!-- Content Grid -->
+    <!-- Main Grid -->
     <main class="p-6 max-w-7xl mx-auto min-h-screen">
         <div id="content-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
-            <!-- Shimmer Loading -->
             <div class="bg-card-custom aspect-video rounded-2xl shimmer opacity-20"></div>
             <div class="bg-card-custom aspect-video rounded-2xl shimmer opacity-20"></div>
             <div class="bg-card-custom aspect-video rounded-2xl shimmer opacity-20"></div>
             <div class="bg-card-custom aspect-video rounded-2xl shimmer opacity-20"></div>
-        </div>
-
-        <div class="mt-20 text-center max-w-3xl mx-auto px-4 pb-40">
-            <p class="text-xs text-muted leading-relaxed opacity-60">
-                BINTV acts as a portal. All streaming data and images are provided via external APIs. We do not host any content.
-            </p>
         </div>
     </main>
 
-    <!-- Video Modal -->
+    <!-- Modal Player -->
     <div id="video-modal" class="hidden fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4">
-        <div class="w-full max-w-4xl relative">
-            <button onclick="closePlayer()" class="absolute -top-12 right-0 text-white hover:text-yellow-500 text-2xl transition-all">
-                <i class="fas fa-times"></i> <span class="text-lg">ปิด</span>
-            </button>
-            <div class="bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10 aspect-video">
+        <div class="w-full max-w-4xl">
+            <div class="flex justify-between items-center mb-4 text-white">
+                <h2 id="modal-title" class="text-lg font-bold">Match</h2>
+                <button onclick="closePlayer()" class="text-2xl hover:text-yellow-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="bg-black rounded-xl overflow-hidden aspect-video border border-white/10">
                 <video id="video-player" class="w-full h-full" controls></video>
             </div>
-            <div class="flex flex-wrap gap-2 mt-4" id="stream-links">
-                <!-- Stream quality buttons will appear here -->
-            </div>
-            <h2 id="modal-title" class="text-xl font-bold mt-4 text-white">กำลังเล่น...</h2>
+            <div class="flex flex-wrap gap-2 mt-4" id="stream-links"></div>
         </div>
     </div>
 
-    <!-- Floating Footer Navigation -->
-    <footer class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-4">
-        <div class="bg-card-custom/80 backdrop-blur-xl border border-white/10 p-2 rounded-full flex items-center gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            <div class="flex items-center bg-gray-500/10 rounded-full p-1">
-                <button id="live-btn" onclick="toggleSchedule('live')" class="bg-yellow-500 text-black px-8 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all active:scale-95">Live</button>
-                <button id="sched-btn" onclick="toggleSchedule('schedule')" class="text-muted px-8 py-2.5 rounded-full text-sm font-bold hover:text-yellow-500 transition-all active:scale-95">Schedule</button>
+    <!-- Footer Controls -->
+    <footer class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+        <div class="bg-card-custom/90 backdrop-blur-md border border-white/10 p-2 rounded-full flex items-center gap-2 shadow-2xl">
+            <div class="flex bg-black/20 rounded-full p-1">
+                <button id="live-btn" onclick="toggleSchedule('live')" class="bg-yellow-500 text-black px-6 py-2 rounded-full text-xs font-bold">Live</button>
+                <button id="sched-btn" onclick="toggleSchedule('schedule')" class="text-muted px-6 py-2 rounded-full text-xs font-bold">Schedule</button>
             </div>
-            
-            <div class="h-8 w-[1px] bg-white/10"></div>
-            
-            <button onclick="toggleDarkMode()" class="w-12 h-12 flex items-center justify-center text-muted hover:text-yellow-400 transition-all bg-white/5 hover:bg-white/10 rounded-full active:scale-90">
-                <i id="mode-icon" class="fas fa-moon text-lg"></i>
+            <div class="h-6 w-[1px] bg-white/10 mx-1"></div>
+            <button onclick="toggleDarkMode()" class="w-10 h-10 flex items-center justify-center text-muted hover:text-yellow-500">
+                <i id="mode-icon" class="fas fa-moon"></i>
             </button>
         </div>
     </footer>
 
     <script>
-        let allMatches = [];
+        const BASE_API = "https://api.watchfooty.st/api/v1";
+        const imageCache = new Map();
+        let currentMatches = [];
         let hls = null;
         const video = document.getElementById('video-player');
         const grid = document.getElementById('content-grid');
-        const BASE_API = "https://api.watchfooty.st/api/v1";
 
-        // 1. Init: Fetch Sports and Matches
+        // Fetch ArrayBuffer image and convert to Blob URL
+        async function getResourceUrl(type, id) {
+            const cacheKey = `${type}_${id}`;
+            if (imageCache.has(cacheKey)) return imageCache.get(cacheKey);
+            
+            try {
+                const response = await fetch(`${BASE_API}/${type}/${id}`);
+                if (!response.ok) return '';
+                const buffer = await response.arrayBuffer();
+                const blob = new Blob([buffer]);
+                const url = URL.createObjectURL(blob);
+                imageCache.set(cacheKey, url);
+                return url;
+            } catch (e) { return ''; }
+        }
+
         async function initialize() {
-            await fetchCategories();
-            await fetchMatches();
+            await fetchSports();
+            loadPopularMatches(document.getElementById('cat-all'));
+            setInterval(() => document.getElementById('view-count').innerText = Math.floor(Math.random() * 50) + 10, 8000);
         }
 
-        async function fetchCategories() {
+        async function fetchSports() {
             try {
-                const response = await fetch(`${BASE_API}/sports`);
-                const sports = await response.json();
+                const res = await fetch(`${BASE_API}/sports`);
+                const sports = await res.json();
                 const nav = document.getElementById('category-nav');
-                sports.forEach(sport => {
-                    const div = document.createElement('div');
-                    div.className = "nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase";
-                    div.innerText = sport.displayName;
-                    div.onclick = (e) => filterByCategory(sport.name, div);
-                    nav.appendChild(div);
+                sports.forEach(s => {
+                    const btn = document.createElement('div');
+                    btn.className = "nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase";
+                    btn.innerText = s.displayName;
+                    btn.onclick = () => loadMatchesBySport(s.name, btn);
+                    nav.appendChild(btn);
                 });
-            } catch (e) { console.error("Sports list failed", e); }
+            } catch (e) {}
         }
 
-        async function fetchMatches() {
+        async function loadPopularMatches(el) {
+            updateTabStyle(el);
             try {
-                // Fetching football as primary, could be mapped based on category
-                const response = await fetch(`${BASE_API}/matches/football`);
-                allMatches = await response.json();
-                renderCards(allMatches);
-            } catch (error) {
-                console.error('Error fetching matches:', error);
-                grid.innerHTML = '<p class="col-span-full text-center text-red-500">ไม่สามารถโหลดข้อมูลการแข่งขันได้</p>';
-            }
+                const res = await fetch(`${BASE_API}/matches/popular`);
+                currentMatches = await res.json();
+                renderCards(currentMatches);
+            } catch (e) {}
         }
 
-        // 2. Render UI
-        function renderCards(matches) {
-            if (matches.length === 0) {
-                grid.innerHTML = '<p class="col-span-full text-center py-10 opacity-50">ไม่มีรายการแข่งในขณะนี้</p>';
-                return;
-            }
+        async function loadMatchesBySport(sport, el) {
+            updateTabStyle(el);
+            try {
+                const res = await fetch(`${BASE_API}/matches/${sport}`);
+                currentMatches = await res.json();
+                renderCards(currentMatches);
+            } catch (e) {}
+        }
 
-            grid.innerHTML = matches.map(match => {
-                const streamUrl = match.streams && match.streams.length > 0 ? match.streams[0].url : '';
-                const posterUrl = match.poster ? match.poster : '';
+        function renderCards(matches) {
+            grid.innerHTML = matches.map(m => {
+                const isLive = m.status === 'in' || (m.timestamp * 1000 < Date.now());
+                const scoreDisplay = m.status === 'in' ? `${m.homeScore} - ${m.awayScore}` : 'VS';
                 
                 return `
-                <div onclick="openMatch('${match.matchId}', '${match.title}')" class="bintv-card bg-card-custom relative rounded-2xl overflow-hidden aspect-video shadow-xl animate-in fade-in duration-500">
-                    <!-- Background Poster -->
-                    <div class="absolute inset-0 bg-cover bg-center opacity-30 transition-transform duration-700 hover:scale-110" 
-                         style="background-image: url('${posterUrl}')"></div>
+                <div id="match-${m.matchId}" onclick="openMatch('${m.matchId}', '${m.title}')" class="bintv-card bg-card-custom relative rounded-2xl overflow-hidden aspect-video shadow-xl">
+                    <!-- Poster Background -->
+                    <div id="poster-${m.matchId}" class="absolute inset-0 bg-cover bg-center opacity-30"></div>
                     
-                    <!-- Team Logos Overlay -->
-                    <div class="absolute inset-0 flex items-center justify-center gap-6 pb-8">
-                        ${match.teams?.home?.logoUrl ? `<img src="${match.teams.home.logoUrl}" class="w-12 h-12 object-contain team-logo" alt="home">` : ''}
-                        <span class="text-xl font-black italic opacity-20">VS</span>
-                        ${match.teams?.away?.logoUrl ? `<img src="${match.teams.away.logoUrl}" class="w-12 h-12 object-contain team-logo" alt="away">` : ''}
+                    <!-- Top Badges -->
+                    <div class="absolute top-3 left-3 flex gap-2">
+                        ${m.isEvent ? '<span class="bg-yellow-500 text-black text-[9px] font-black px-2 py-0.5 rounded">PINNED</span>' : ''}
+                        <div id="league-logo-${m.matchId}" class="w-5 h-5 bg-white/10 rounded-full flex items-center justify-center p-0.5"></div>
                     </div>
-
-                    <div class="absolute top-3 right-3 z-10 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg">
-                        ${match.isEvent ? 'EVENT' : (match.timestamp * 1000 < Date.now() ? 'LIVE' : 'UPCOMING')}
-                    </div>
-
-                    <div class="absolute inset-0 card-gradient flex flex-col justify-end p-5">
-                        <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-[0.2em]">${match.league || match.sport}</p>
-                        <h3 class="font-bold text-sm mt-1 line-clamp-2">${match.title}</h3>
-                        <div class="flex items-center justify-between mt-2">
-                            <span class="text-[9px] opacity-60"><i class="far fa-calendar-alt mr-1"></i> ${match.date}</span>
-                            <div class="flex gap-2">
-                                <i class="fas fa-play-circle text-xl text-yellow-500"></i>
-                            </div>
+                    
+                    ${isLive ? `
+                        <div class="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                            ${m.currentMinute ? `<span>${m.currentMinute}'</span>` : 'LIVE'}
                         </div>
+                    ` : ''}
+
+                    <!-- VS / Scores / Team Logos -->
+                    <div class="absolute inset-0 flex items-center justify-center gap-4 pb-10">
+                        <div id="home-logo-${m.matchId}" class="flex flex-col items-center"></div>
+                        <span class="text-xl font-black italic ${m.status === 'in' ? 'text-yellow-500' : 'opacity-20'}">${scoreDisplay}</span>
+                        <div id="away-logo-${m.matchId}" class="flex flex-col items-center"></div>
+                    </div>
+
+                    <!-- Info Overlay -->
+                    <div class="absolute inset-0 card-gradient flex flex-col justify-end p-4">
+                        <p class="text-[9px] text-yellow-500 font-bold uppercase tracking-wider">${m.league || m.sport}</p>
+                        <h3 class="font-bold text-xs mt-0.5 line-clamp-1">${m.title}</h3>
+                        <p class="text-[8px] text-white/40 mt-1">${m.venue || ''}</p>
                     </div>
                 </div>
-            `;}).join('');
+            `}).join('');
+
+            // Load all visual resources via Blob API
+            matches.forEach(async m => {
+                // Load Poster
+                const pUrl = await getResourceUrl('poster', m.matchId);
+                const pEl = document.getElementById(`poster-${m.matchId}`);
+                if (pEl && pUrl) pEl.style.backgroundImage = `url('${pUrl}')`;
+
+                // Load Home Logo
+                const hUrl = await getResourceUrl('team-logo', m.teams?.home?.logoId || m.teams?.home?.id);
+                const hEl = document.getElementById(`home-logo-${m.matchId}`);
+                if (hEl && hUrl) hEl.innerHTML = `<img src="${hUrl}" class="team-logo-img">`;
+
+                // Load Away Logo
+                const aUrl = await getResourceUrl('team-logo', m.teams?.away?.logoId || m.teams?.away?.id);
+                const aEl = document.getElementById(`away-logo-${m.matchId}`);
+                if (aEl && aUrl) aEl.innerHTML = `<img src="${aUrl}" class="team-logo-img">`;
+
+                // Load League Logo
+                if (m.leagueLogoId) {
+                    const lUrl = await getResourceUrl('league-logo', m.leagueLogoId);
+                    const lEl = document.getElementById(`league-logo-${m.matchId}`);
+                    if (lEl && lUrl) lEl.innerHTML = `<img src="${lUrl}" class="w-full h-full object-contain">`;
+                }
+            });
         }
 
-        // 3. Match Details & Streaming
         async function openMatch(id, title) {
             try {
-                const response = await fetch(`${BASE_API}/match/${id}`);
-                const data = await response.json();
+                const res = await fetch(`${BASE_API}/match/${id}`);
+                const dataArray = await res.json();
+                const data = dataArray[0] || dataArray; // Handle if API returns array or object
                 
-                if (data.streams && data.streams.length > 0) {
-                    const streamLinks = document.getElementById('stream-links');
-                    streamLinks.innerHTML = data.streams.map((s, idx) => `
-                        <button onclick="playStream('${s.url}')" class="bg-white/10 hover:bg-yellow-500 hover:text-black px-3 py-1 rounded-md text-[10px] font-bold transition-all">
-                            ${s.language} - ${s.quality}
+                if (data.streams?.length > 0) {
+                    const links = document.getElementById('stream-links');
+                    links.innerHTML = data.streams.map(s => `
+                        <button onclick="playStream('${s.url}')" class="bg-white/10 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded text-[10px] font-bold">
+                            ${s.language || 'English'} - ${s.quality || 'Auto'}
                         </button>
                     `).join('');
-                    
-                    openPlayer(data.streams[0].url, title);
-                } else {
-                    alert("No streams available for this match yet.");
-                }
-            } catch (e) {
-                console.error("Match detail fetch error", e);
-            }
+                    openPlayer(data.streams[0].url, data.title || title);
+                } else { alert("Waiting for stream links..."); }
+            } catch (e) {}
         }
 
         function openPlayer(url, title) {
-            const modal = document.getElementById('video-modal');
-            const modalTitle = document.getElementById('modal-title');
-            
-            modal.classList.remove('hidden');
-            modalTitle.innerText = title;
+            document.getElementById('video-modal').classList.remove('hidden');
+            document.getElementById('modal-title').innerText = title;
             document.body.style.overflow = 'hidden';
             playStream(url);
         }
@@ -303,67 +308,36 @@
             document.getElementById('video-modal').classList.add('hidden');
             document.body.style.overflow = 'auto';
             video.pause();
-            if (hls) {
-                hls.stopLoad();
-                hls.detachMedia();
-            }
+            if (hls) hls.destroy();
         }
 
-        // 4. Filtering
-        function filterByCategory(sportName, element) {
-            const items = document.querySelectorAll('.nav-item');
-            items.forEach(item => { item.classList.remove('active-tab'); item.classList.add('text-gray-400'); });
-            element.classList.add('active-tab');
-            element.classList.remove('text-gray-400');
-
-            if (sportName === 'all') {
-                renderCards(allMatches);
-            } else {
-                const filtered = allMatches.filter(m => m.sport.toLowerCase() === sportName.toLowerCase());
-                renderCards(filtered);
-            }
+        function updateTabStyle(el) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active-tab', 'text-white'));
+            el.classList.add('active-tab');
         }
 
-        function filterEvents() {
-            const q = document.getElementById('search-input').value.toLowerCase();
-            const filtered = allMatches.filter(m => 
-                m.title.toLowerCase().includes(q) || 
-                (m.league && m.league.toLowerCase().includes(q))
-            );
-            renderCards(filtered);
-        }
-
-        // 5. General Utils
         function toggleDarkMode() {
-            const body = document.body;
+            document.body.classList.toggle('light-mode');
             const icon = document.getElementById('mode-icon');
-            body.classList.toggle('light-mode');
-            const isLight = body.classList.contains('light-mode');
-            icon.className = isLight ? 'fas fa-sun text-lg' : 'fas fa-moon text-lg';
-            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            icon.className = document.body.classList.contains('light-mode') ? 'fas fa-sun' : 'fas fa-moon';
         }
 
         function toggleSchedule(mode) {
             const liveBtn = document.getElementById('live-btn');
             const schedBtn = document.getElementById('sched-btn');
             const now = Date.now();
-            
             if (mode === 'live') {
-                liveBtn.className = 'bg-yellow-500 text-black px-8 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all active:scale-95';
-                schedBtn.className = 'text-muted px-8 py-2.5 rounded-full text-sm font-bold hover:text-yellow-500 transition-all active:scale-95';
-                renderCards(allMatches.filter(m => m.timestamp * 1000 <= now));
+                liveBtn.className = "bg-yellow-500 text-black px-6 py-2 rounded-full text-xs font-bold";
+                schedBtn.className = "text-muted px-6 py-2 rounded-full text-xs font-bold";
+                renderCards(currentMatches.filter(m => m.timestamp * 1000 <= now));
             } else {
-                schedBtn.className = 'bg-yellow-500 text-black px-8 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all active:scale-95';
-                liveBtn.className = 'text-muted px-8 py-2.5 rounded-full text-sm font-bold hover:text-yellow-500 transition-all active:scale-95';
-                renderCards(allMatches.filter(m => m.timestamp * 1000 > now));
+                schedBtn.className = "bg-yellow-500 text-black px-6 py-2 rounded-full text-xs font-bold";
+                liveBtn.className = "text-muted px-6 py-2 rounded-full text-xs font-bold";
+                renderCards(currentMatches.filter(m => m.timestamp * 1000 > now));
             }
         }
 
-        window.onload = () => {
-            if (localStorage.getItem('theme') === 'light') toggleDarkMode();
-            initialize();
-        };
+        window.onload = initialize;
     </script>
-
 </body>
 </html>
