@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BINTV Style Blog - Sports Streaming</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -29,163 +30,166 @@
             background-color: var(--bg-main);
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s ease;
         }
 
-        .bg-dark-header { background-color: var(--bg-header); transition: background-color 0.3s ease; }
-        .bg-card-custom { background-color: var(--bg-card); transition: background-color 0.3s ease; }
+        .bg-dark-header { background-color: var(--bg-header); transition: background-color 0.4s ease; }
+        .bg-card-custom { background-color: var(--bg-card); transition: background-color 0.4s ease; }
         
         .card-gradient {
-            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.6) 100%);
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.7) 100%);
         }
         
         .category-scroll::-webkit-scrollbar { display: none; }
         
-        .active-tab { background-color: #ffc107 !important; color: #000 !important; font-weight: bold; }
+        .active-tab { background-color: #ffc107 !important; color: #000 !important; font-weight: bold; transform: scale(1.05); }
         
         .live-badge { background-color: #ff4b4b; animation: pulse 2s infinite; }
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
         }
 
         .bintv-card {
-            transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease, box-shadow 0.3s ease;
             border: 2px solid transparent;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-        
-        .light-mode .bintv-card {
-            border: 1px solid var(--border-color);
+            cursor: pointer;
         }
 
         .bintv-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px) scale(1.02);
             border-color: #ffc107;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
-        .nav-item { cursor: pointer; transition: color 0.2s; }
+        .bintv-card:active {
+            transform: translateY(-4px) scale(0.98);
+        }
+
+        .nav-item { 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+        }
+        
+        .nav-item:active { transform: scale(0.9); }
+
+        /* Video Player Modal Animation */
+        #video-modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #video-modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+            display: flex; /* Keep flex for transition but hidden */
+        }
     </style>
 </head>
-<body class="p-0 m-0">
+<body class="p-0 m-0 overflow-x-hidden">
 
     <!-- Header & Search -->
-    <header class="bg-dark-header p-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-50 border-b border-gray-800/20">
+    <header class="bg-dark-header p-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-50 border-b border-gray-800/20 shadow-lg">
         <div class="flex items-center gap-2">
-            <div class="bg-blue-600 w-10 h-10 rounded flex items-center justify-center font-bold text-xl text-white">B</div>
+            <div class="bg-blue-600 w-10 h-10 rounded flex items-center justify-center font-bold text-xl text-white shadow-lg">B</div>
             <span class="text-2xl font-bold tracking-tighter">testproject</span>
         </div>
         
-        <div class="relative w-full max-w-xl">
-            <input type="text" placeholder="ค้นหาการถ่ายทอดสด..." class="w-full bg-gray-500/10 border-none rounded-md py-2 px-10 focus:ring-2 focus:ring-yellow-500 outline-none text-sm text-inherit">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-xs"></i>
+        <div class="relative w-full max-w-xl group">
+            <input type="text" placeholder="ค้นหาการถ่ายทอดสด..." class="w-full bg-gray-500/10 border border-transparent rounded-md py-2 px-10 focus:ring-2 focus:ring-yellow-500 focus:bg-gray-500/20 outline-none text-sm text-inherit transition-all">
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400 group-focus-within:text-yellow-500 transition-colors"></i>
         </div>
-
     </header>
 
     <!-- Categories Navigation -->
-    <nav class="bg-dark-header border-t border-gray-800/20 overflow-x-auto category-scroll px-4 py-3 shadow-sm">
+    <nav class="bg-dark-header border-t border-gray-800/20 overflow-x-auto category-scroll px-4 py-3 shadow-md sticky top-[72px] z-40">
         <div id="category-nav" class="flex items-center gap-4 min-w-max">
-            <div onclick="setActiveTab(this)" class="nav-item active-tab px-4 py-1.5 rounded-md text-sm uppercase">All Sports</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-4 py-1.5 rounded-md text-sm uppercase">AFL</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-4 py-1.5 rounded-md text-sm uppercase">Baseball</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-4 py-1.5 rounded-md text-sm uppercase">Basketball</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-4 py-1.5 rounded-md text-sm uppercase">Boxing</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-4 py-1.5 rounded-md text-sm uppercase">Cricket</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-4 py-1.5 rounded-md text-sm uppercase">MMA</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-4 py-1.5 rounded-md text-sm uppercase">Rugby</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-4 py-1.5 rounded-md text-sm uppercase">Soccer</div>
+            <div onclick="setActiveTab(this)" class="nav-item active-tab px-5 py-2 rounded-lg text-sm uppercase">All Sports</div>
+            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">AFL</div>
+            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Baseball</div>
+            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Basketball</div>
+            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Boxing</div>
+            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Cricket</div>
+            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">MMA</div>
+            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Rugby</div>
+            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Soccer</div>
         </div>
     </nav>
 
     <!-- Content Grid -->
     <main class="p-6 max-w-7xl mx-auto min-h-screen">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div id="content-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Cards will be rendered here via Script if using API, but keeping static for now -->
             
-            <!-- Card 1 -->
-            <div class="bintv-card bg-card-custom relative rounded-xl overflow-hidden aspect-video">
-                <div class="absolute top-2 left-2 z-10 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                    <i class="fas fa-thumbtack"></i> PINNED
+            <!-- Example Card with Play Action -->
+            <div onclick="openPlayer('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', 'India vs Netherlands')" class="bintv-card bg-card-custom relative rounded-2xl overflow-hidden aspect-video shadow-xl">
+                <div class="absolute top-3 right-3 z-10 bg-blue-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg">LIVE</div>
+                <div class="w-full h-full flex items-center justify-center opacity-20">
+                    <i class="fas fa-play-circle text-6xl"></i>
                 </div>
-                <img src="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&q=80&w=600" alt="Betting" class="w-full h-full object-cover opacity-60">
-                <div class="absolute inset-0 card-gradient flex flex-col justify-end p-4">
-                    <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-widest">STAKE</p>
-                    <h3 class="font-bold text-sm">Bet Now on Stake!</h3>
-                    <p class="text-[10px] opacity-70">Deposit $100, Bet with $300</p>
+                <div class="absolute inset-0 card-gradient flex flex-col justify-end p-5">
+                    <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-[0.2em]">CRICKET</p>
+                    <h3 class="font-bold text-base mt-1">India vs Netherlands</h3>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="live-badge w-2 h-2 rounded-full"></span>
+                        <span class="text-[10px] opacity-70">1.2k viewers</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Card 2 -->
-            <div class="bintv-card bg-card-custom relative rounded-xl overflow-hidden aspect-video">
-                <div class="absolute top-2 right-2 z-10 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">5</div>
-                <div class="w-full h-full flex items-center justify-center opacity-20">
-                    <i class="fas fa-cricket-bat-ball text-5xl"></i>
-                </div>
-                <div class="absolute inset-0 card-gradient flex flex-col justify-end p-4">
-                    <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-widest">CRICKET</p>
-                    <h3 class="font-bold text-sm">India vs Netherlands</h3>
+            <div onclick="openPlayer('https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8', 'Sintel Movie Stream')" class="bintv-card bg-card-custom relative rounded-2xl overflow-hidden aspect-video shadow-xl">
+                <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center opacity-40"></div>
+                <div class="absolute inset-0 card-gradient flex flex-col justify-end p-5">
+                    <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-[0.2em]">SOCCER</p>
+                    <h3 class="font-bold text-base mt-1">Premier League Highlights</h3>
                 </div>
             </div>
 
-            <!-- Card 3 -->
-            <div class="bintv-card bg-card-custom relative rounded-xl overflow-hidden aspect-video">
-                <div class="absolute top-2 right-2 z-10 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span class="live-badge w-1.5 h-1.5 rounded-full"></span> 2
-                </div>
-                <div class="w-full h-full flex items-center justify-center gap-4 px-8">
-                    <div class="w-12 h-12 bg-green-600 rounded-full border-2 border-white/20 shadow-inner"></div>
-                    <div class="w-12 h-12 bg-red-600 rounded-full border-2 border-white/20 shadow-inner"></div>
-                </div>
-                <div class="absolute inset-0 card-gradient flex flex-col justify-end p-4">
-                    <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-widest">CRICKET</p>
-                    <h3 class="font-bold text-sm">South Africa vs UAE</h3>
-                </div>
-            </div>
-
-            <!-- Card 4 -->
-            <div class="bintv-card bg-card-custom relative rounded-xl overflow-hidden aspect-video">
-                <div class="w-full h-full flex items-center justify-center font-black text-4xl opacity-10 italic">VS</div>
-                <div class="absolute inset-0 card-gradient flex flex-col justify-end p-4">
-                    <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-widest">FIGHT</p>
-                    <h3 class="font-bold text-sm">WWE: NXT</h3>
-                </div>
-            </div>
-
+            <!-- More cards... -->
         </div>
 
-        <!-- Disclaimer -->
-        <div class="mt-20 text-center max-w-3xl mx-auto px-4 pb-32">
-            <p class="text-xs text-muted leading-relaxed">
-                BINTV does not host any media content on its site. Any content displayed may be embedded from third-party websites. 
-                All links and media shared by visitors are hosted elsewhere on the web.
+        <div class="mt-20 text-center max-w-3xl mx-auto px-4 pb-40">
+            <p class="text-xs text-muted leading-relaxed opacity-60">
+                BINTV does not host any media content. This is a demo template featuring HLS.js integration for educational purposes.
             </p>
         </div>
     </main>
 
+    <!-- Video Modal -->
+    <div id="video-modal" class="hidden fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl relative">
+            <button onclick="closePlayer()" class="absolute -top-12 right-0 text-white hover:text-yellow-500 text-2xl transition-colors">
+                <i class="fas fa-times"></i> ปิดหน้าต่าง
+            </button>
+            <div class="bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10 aspect-video">
+                <video id="video-player" class="w-full h-full" controls></video>
+            </div>
+            <h2 id="modal-title" class="text-xl font-bold mt-4 text-white">Stream Title</h2>
+        </div>
+    </div>
+
     <!-- Floating Footer Navigation -->
-    <footer class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-4">
-        <div class="bg-card-custom/80 backdrop-blur-lg border border-gray-700/50 p-1.5 rounded-full flex items-center gap-2 shadow-2xl">
+    <footer class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-4">
+        <div class="bg-card-custom/80 backdrop-blur-xl border border-white/10 p-2 rounded-full flex items-center gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
             <div class="flex items-center bg-gray-500/10 rounded-full p-1">
-                <button id="live-btn" onclick="toggleSchedule('live')" class="bg-yellow-500 text-black px-6 py-2 rounded-full text-sm font-bold shadow-lg transition-all">Live</button>
-                <button id="sched-btn" onclick="toggleSchedule('schedule')" class="text-muted px-6 py-2 rounded-full text-sm font-bold hover:text-yellow-500 transition-all">Schedule</button>
+                <button id="live-btn" onclick="toggleSchedule('live')" class="bg-yellow-500 text-black px-8 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all active:scale-95">Live</button>
+                <button id="sched-btn" onclick="toggleSchedule('schedule')" class="text-muted px-8 py-2.5 rounded-full text-sm font-bold hover:text-yellow-500 transition-all active:scale-95">Schedule</button>
             </div>
             
-            <div class="h-8 w-[1px] bg-gray-700/50 mx-1"></div>
+            <div class="h-8 w-[1px] bg-white/10"></div>
             
-            <button class="w-10 h-10 flex items-center justify-center text-muted hover:text-blue-400 transition bg-gray-500/10 rounded-full">
-                <i class="fab fa-discord"></i>
-            </button>
-            
-            <!-- Dark Mode Toggle Button -->
-            <button onclick="toggleDarkMode()" class="w-10 h-10 flex items-center justify-center text-muted hover:text-yellow-400 transition bg-gray-500/10 rounded-full">
-                <i id="mode-icon" class="fas fa-moon"></i>
+            <button onclick="toggleDarkMode()" class="w-12 h-12 flex items-center justify-center text-muted hover:text-yellow-400 transition-all bg-white/5 hover:bg-white/10 rounded-full active:scale-90">
+                <i id="mode-icon" class="fas fa-moon text-lg"></i>
             </button>
         </div>
     </footer>
 
     <script>
-        // 1. Navigation Logic
+        // HLS Player Instance
+        let hls = null;
+        const video = document.getElementById('video-player');
+
+        // 1. Navigation & Data logic
         function setActiveTab(element) {
             const items = document.querySelectorAll('.nav-item');
             items.forEach(item => {
@@ -194,48 +198,72 @@
             });
             element.classList.add('active-tab');
             element.classList.remove('text-gray-400');
-            
-            // ตัวอย่าง: การกรองเนื้อหา (ถ้ามีระบบดึงข้อมูลจริง)
-            console.log("หมวดหมู่ที่เลือก:", element.innerText);
         }
 
-        // 2. Dark/Light Mode Logic
-        function toggleDarkMode() {
-            const body = document.body;
-            const icon = document.getElementById('mode-icon');
+        // 2. Video Player Logic (HLS.js)
+        function openPlayer(url, title) {
+            const modal = document.getElementById('video-modal');
+            const modalTitle = document.getElementById('modal-title');
             
-            body.classList.toggle('light-mode');
-            
-            if (body.classList.contains('light-mode')) {
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
-                localStorage.setItem('theme', 'light');
-            } else {
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
-                localStorage.setItem('theme', 'dark');
+            modal.classList.remove('hidden');
+            modalTitle.innerText = title;
+            document.body.style.overflow = 'hidden'; // Stop scrolling
+
+            if (Hls.isSupported()) {
+                if (hls) hls.destroy();
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video.play();
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // For Safari
+                video.src = url;
+                video.addEventListener('loadedmetadata', function() {
+                    video.play();
+                });
             }
         }
 
-        // 3. Schedule Toggle Logic
+        function closePlayer() {
+            const modal = document.getElementById('video-modal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            video.pause();
+            if (hls) {
+                hls.stopLoad();
+                hls.detachMedia();
+            }
+        }
+
+        // 3. Dark/Light Mode
+        function toggleDarkMode() {
+            const body = document.body;
+            const icon = document.getElementById('mode-icon');
+            body.classList.toggle('light-mode');
+            
+            const isLight = body.classList.contains('light-mode');
+            icon.className = isLight ? 'fas fa-sun text-lg' : 'fas fa-moon text-lg';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        // 4. Schedule Toggle
         function toggleSchedule(mode) {
             const liveBtn = document.getElementById('live-btn');
             const schedBtn = document.getElementById('sched-btn');
             
             if (mode === 'live') {
-                liveBtn.className = 'bg-yellow-500 text-black px-6 py-2 rounded-full text-sm font-bold shadow-lg transition-all';
-                schedBtn.className = 'text-muted px-6 py-2 rounded-full text-sm font-bold hover:text-yellow-500 transition-all';
+                liveBtn.className = 'bg-yellow-500 text-black px-8 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all active:scale-95';
+                schedBtn.className = 'text-muted px-8 py-2.5 rounded-full text-sm font-bold hover:text-yellow-500 transition-all active:scale-95';
             } else {
-                schedBtn.className = 'bg-yellow-500 text-black px-6 py-2 rounded-full text-sm font-bold shadow-lg transition-all';
-                liveBtn.className = 'text-muted px-6 py-2 rounded-full text-sm font-bold hover:text-yellow-500 transition-all';
+                schedBtn.className = 'bg-yellow-500 text-black px-8 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all active:scale-95';
+                liveBtn.className = 'text-muted px-8 py-2.5 rounded-full text-sm font-bold hover:text-yellow-500 transition-all active:scale-95';
             }
         }
 
-        // เช็คการตั้งค่าสีจาก Browser/LocalStorage ตอนเริ่ม
         window.onload = () => {
-            if (localStorage.getItem('theme') === 'light') {
-                toggleDarkMode();
-            }
+            if (localStorage.getItem('theme') === 'light') toggleDarkMode();
         };
     </script>
 
