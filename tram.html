@@ -37,7 +37,7 @@
         .bg-card-custom { background-color: var(--bg-card); transition: background-color 0.4s ease; }
         
         .card-gradient {
-            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.7) 100%);
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.8) 100%);
         }
         
         .category-scroll::-webkit-scrollbar { display: none; }
@@ -74,14 +74,28 @@
         
         .nav-item:active { transform: scale(0.9); }
 
-        /* Video Player Modal Animation */
         #video-modal {
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
         #video-modal.hidden {
             opacity: 0;
             visibility: hidden;
-            display: flex; /* Keep flex for transition but hidden */
+            display: none;
+        }
+        
+        /* Shimmer Loading Effect */
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .team-logo {
+            filter: drop-shadow(0 0 8px rgba(0,0,0,0.5));
         }
     </style>
 </head>
@@ -89,68 +103,38 @@
 
     <!-- Header & Search -->
     <header class="bg-dark-header p-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-50 border-b border-gray-800/20 shadow-lg">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="location.reload()">
             <div class="bg-blue-600 w-10 h-10 rounded flex items-center justify-center font-bold text-xl text-white shadow-lg">B</div>
-            <span class="text-2xl font-bold tracking-tighter">testproject</span>
+            <span class="text-2xl font-bold tracking-tighter">BINTV</span>
         </div>
         
         <div class="relative w-full max-w-xl group">
-            <input type="text" placeholder="ค้นหาการถ่ายทอดสด..." class="w-full bg-gray-500/10 border border-transparent rounded-md py-2 px-10 focus:ring-2 focus:ring-yellow-500 focus:bg-gray-500/20 outline-none text-sm text-inherit transition-all">
+            <input type="text" id="search-input" onkeyup="filterEvents()" placeholder="ค้นหาทีม ลีก หรือการถ่ายทอดสด..." class="w-full bg-gray-500/10 border border-transparent rounded-md py-2 px-10 focus:ring-2 focus:ring-yellow-500 focus:bg-gray-500/20 outline-none text-sm text-inherit transition-all">
             <i class="fas fa-search absolute left-3 top-3 text-gray-400 group-focus-within:text-yellow-500 transition-colors"></i>
         </div>
     </header>
 
     <!-- Categories Navigation -->
     <nav class="bg-dark-header border-t border-gray-800/20 overflow-x-auto category-scroll px-4 py-3 shadow-md sticky top-[72px] z-40">
-        <div id="category-nav" class="flex items-center gap-4 min-w-max">
-            <div onclick="setActiveTab(this)" class="nav-item active-tab px-5 py-2 rounded-lg text-sm uppercase">All Sports</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">AFL</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Baseball</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Basketball</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Boxing</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Cricket</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">MMA</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Rugby</div>
-            <div onclick="setActiveTab(this)" class="nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase">Soccer</div>
+        <div id="category-nav" class="flex items-center gap-4 min-w-max text-white">
+            <div onclick="filterByCategory('all', this)" class="nav-item active-tab px-5 py-2 rounded-lg text-sm uppercase">All Sports</div>
+            <!-- Dynamic categories will be loaded here -->
         </div>
     </nav>
 
     <!-- Content Grid -->
     <main class="p-6 max-w-7xl mx-auto min-h-screen">
-        <div id="content-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Cards will be rendered here via Script if using API, but keeping static for now -->
-            
-            <!-- Example Card with Play Action -->
-            <div onclick="openPlayer('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', 'India vs Netherlands')" class="bintv-card bg-card-custom relative rounded-2xl overflow-hidden aspect-video shadow-xl">
-                <div class="absolute top-3 right-3 z-10 bg-blue-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg">LIVE</div>
-                <div class="w-full h-full flex items-center justify-center opacity-20">
-                    <i class="fas fa-play-circle text-6xl"></i>
-                </div>
-                <div class="absolute inset-0 card-gradient flex flex-col justify-end p-5">
-                    <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-[0.2em]">CRICKET</p>
-                    <h3 class="font-bold text-base mt-1">India vs Netherlands</h3>
-                    <div class="flex items-center gap-2 mt-2">
-                        <span class="live-badge w-2 h-2 rounded-full"></span>
-                        <span class="text-[10px] opacity-70">1.2k viewers</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card 2 -->
-            <div onclick="openPlayer('https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8', 'Sintel Movie Stream')" class="bintv-card bg-card-custom relative rounded-2xl overflow-hidden aspect-video shadow-xl">
-                <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center opacity-40"></div>
-                <div class="absolute inset-0 card-gradient flex flex-col justify-end p-5">
-                    <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-[0.2em]">SOCCER</p>
-                    <h3 class="font-bold text-base mt-1">Premier League Highlights</h3>
-                </div>
-            </div>
-
-            <!-- More cards... -->
+        <div id="content-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
+            <!-- Shimmer Loading -->
+            <div class="bg-card-custom aspect-video rounded-2xl shimmer opacity-20"></div>
+            <div class="bg-card-custom aspect-video rounded-2xl shimmer opacity-20"></div>
+            <div class="bg-card-custom aspect-video rounded-2xl shimmer opacity-20"></div>
+            <div class="bg-card-custom aspect-video rounded-2xl shimmer opacity-20"></div>
         </div>
 
         <div class="mt-20 text-center max-w-3xl mx-auto px-4 pb-40">
             <p class="text-xs text-muted leading-relaxed opacity-60">
-                BINTV does not host any media content. This is a demo template featuring HLS.js integration for educational purposes.
+                BINTV acts as a portal. All streaming data and images are provided via external APIs. We do not host any content.
             </p>
         </div>
     </main>
@@ -158,13 +142,16 @@
     <!-- Video Modal -->
     <div id="video-modal" class="hidden fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-4xl relative">
-            <button onclick="closePlayer()" class="absolute -top-12 right-0 text-white hover:text-yellow-500 text-2xl transition-colors">
-                <i class="fas fa-times"></i> ปิดหน้าต่าง
+            <button onclick="closePlayer()" class="absolute -top-12 right-0 text-white hover:text-yellow-500 text-2xl transition-all">
+                <i class="fas fa-times"></i> <span class="text-lg">ปิด</span>
             </button>
             <div class="bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10 aspect-video">
                 <video id="video-player" class="w-full h-full" controls></video>
             </div>
-            <h2 id="modal-title" class="text-xl font-bold mt-4 text-white">Stream Title</h2>
+            <div class="flex flex-wrap gap-2 mt-4" id="stream-links">
+                <!-- Stream quality buttons will appear here -->
+            </div>
+            <h2 id="modal-title" class="text-xl font-bold mt-4 text-white">กำลังเล่น...</h2>
         </div>
     </div>
 
@@ -185,50 +172,135 @@
     </footer>
 
     <script>
-        // HLS Player Instance
+        let allMatches = [];
         let hls = null;
         const video = document.getElementById('video-player');
+        const grid = document.getElementById('content-grid');
+        const BASE_API = "https://api.watchfooty.st/api/v1";
 
-        // 1. Navigation & Data logic
-        function setActiveTab(element) {
-            const items = document.querySelectorAll('.nav-item');
-            items.forEach(item => {
-                item.classList.remove('active-tab');
-                item.classList.add('text-gray-400');
-            });
-            element.classList.add('active-tab');
-            element.classList.remove('text-gray-400');
+        // 1. Init: Fetch Sports and Matches
+        async function initialize() {
+            await fetchCategories();
+            await fetchMatches();
         }
 
-        // 2. Video Player Logic (HLS.js)
+        async function fetchCategories() {
+            try {
+                const response = await fetch(`${BASE_API}/sports`);
+                const sports = await response.json();
+                const nav = document.getElementById('category-nav');
+                sports.forEach(sport => {
+                    const div = document.createElement('div');
+                    div.className = "nav-item text-gray-400 hover:text-yellow-500 px-5 py-2 rounded-lg text-sm uppercase";
+                    div.innerText = sport.displayName;
+                    div.onclick = (e) => filterByCategory(sport.name, div);
+                    nav.appendChild(div);
+                });
+            } catch (e) { console.error("Sports list failed", e); }
+        }
+
+        async function fetchMatches() {
+            try {
+                // Fetching football as primary, could be mapped based on category
+                const response = await fetch(`${BASE_API}/matches/football`);
+                allMatches = await response.json();
+                renderCards(allMatches);
+            } catch (error) {
+                console.error('Error fetching matches:', error);
+                grid.innerHTML = '<p class="col-span-full text-center text-red-500">ไม่สามารถโหลดข้อมูลการแข่งขันได้</p>';
+            }
+        }
+
+        // 2. Render UI
+        function renderCards(matches) {
+            if (matches.length === 0) {
+                grid.innerHTML = '<p class="col-span-full text-center py-10 opacity-50">ไม่มีรายการแข่งในขณะนี้</p>';
+                return;
+            }
+
+            grid.innerHTML = matches.map(match => {
+                const streamUrl = match.streams && match.streams.length > 0 ? match.streams[0].url : '';
+                const posterUrl = match.poster ? match.poster : '';
+                
+                return `
+                <div onclick="openMatch('${match.matchId}', '${match.title}')" class="bintv-card bg-card-custom relative rounded-2xl overflow-hidden aspect-video shadow-xl animate-in fade-in duration-500">
+                    <!-- Background Poster -->
+                    <div class="absolute inset-0 bg-cover bg-center opacity-30 transition-transform duration-700 hover:scale-110" 
+                         style="background-image: url('${posterUrl}')"></div>
+                    
+                    <!-- Team Logos Overlay -->
+                    <div class="absolute inset-0 flex items-center justify-center gap-6 pb-8">
+                        ${match.teams?.home?.logoUrl ? `<img src="${match.teams.home.logoUrl}" class="w-12 h-12 object-contain team-logo" alt="home">` : ''}
+                        <span class="text-xl font-black italic opacity-20">VS</span>
+                        ${match.teams?.away?.logoUrl ? `<img src="${match.teams.away.logoUrl}" class="w-12 h-12 object-contain team-logo" alt="away">` : ''}
+                    </div>
+
+                    <div class="absolute top-3 right-3 z-10 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg">
+                        ${match.isEvent ? 'EVENT' : (match.timestamp * 1000 < Date.now() ? 'LIVE' : 'UPCOMING')}
+                    </div>
+
+                    <div class="absolute inset-0 card-gradient flex flex-col justify-end p-5">
+                        <p class="text-[10px] text-yellow-500 font-bold uppercase tracking-[0.2em]">${match.league || match.sport}</p>
+                        <h3 class="font-bold text-sm mt-1 line-clamp-2">${match.title}</h3>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-[9px] opacity-60"><i class="far fa-calendar-alt mr-1"></i> ${match.date}</span>
+                            <div class="flex gap-2">
+                                <i class="fas fa-play-circle text-xl text-yellow-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;}).join('');
+        }
+
+        // 3. Match Details & Streaming
+        async function openMatch(id, title) {
+            try {
+                const response = await fetch(`${BASE_API}/match/${id}`);
+                const data = await response.json();
+                
+                if (data.streams && data.streams.length > 0) {
+                    const streamLinks = document.getElementById('stream-links');
+                    streamLinks.innerHTML = data.streams.map((s, idx) => `
+                        <button onclick="playStream('${s.url}')" class="bg-white/10 hover:bg-yellow-500 hover:text-black px-3 py-1 rounded-md text-[10px] font-bold transition-all">
+                            ${s.language} - ${s.quality}
+                        </button>
+                    `).join('');
+                    
+                    openPlayer(data.streams[0].url, title);
+                } else {
+                    alert("No streams available for this match yet.");
+                }
+            } catch (e) {
+                console.error("Match detail fetch error", e);
+            }
+        }
+
         function openPlayer(url, title) {
             const modal = document.getElementById('video-modal');
             const modalTitle = document.getElementById('modal-title');
             
             modal.classList.remove('hidden');
             modalTitle.innerText = title;
-            document.body.style.overflow = 'hidden'; // Stop scrolling
+            document.body.style.overflow = 'hidden';
+            playStream(url);
+        }
 
+        function playStream(url) {
             if (Hls.isSupported()) {
                 if (hls) hls.destroy();
                 hls = new Hls();
                 hls.loadSource(url);
                 hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                    video.play();
-                });
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // For Safari
                 video.src = url;
-                video.addEventListener('loadedmetadata', function() {
-                    video.play();
-                });
+                video.play();
             }
         }
 
         function closePlayer() {
-            const modal = document.getElementById('video-modal');
-            modal.classList.add('hidden');
+            document.getElementById('video-modal').classList.add('hidden');
             document.body.style.overflow = 'auto';
             video.pause();
             if (hls) {
@@ -237,33 +309,59 @@
             }
         }
 
-        // 3. Dark/Light Mode
+        // 4. Filtering
+        function filterByCategory(sportName, element) {
+            const items = document.querySelectorAll('.nav-item');
+            items.forEach(item => { item.classList.remove('active-tab'); item.classList.add('text-gray-400'); });
+            element.classList.add('active-tab');
+            element.classList.remove('text-gray-400');
+
+            if (sportName === 'all') {
+                renderCards(allMatches);
+            } else {
+                const filtered = allMatches.filter(m => m.sport.toLowerCase() === sportName.toLowerCase());
+                renderCards(filtered);
+            }
+        }
+
+        function filterEvents() {
+            const q = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allMatches.filter(m => 
+                m.title.toLowerCase().includes(q) || 
+                (m.league && m.league.toLowerCase().includes(q))
+            );
+            renderCards(filtered);
+        }
+
+        // 5. General Utils
         function toggleDarkMode() {
             const body = document.body;
             const icon = document.getElementById('mode-icon');
             body.classList.toggle('light-mode');
-            
             const isLight = body.classList.contains('light-mode');
             icon.className = isLight ? 'fas fa-sun text-lg' : 'fas fa-moon text-lg';
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
         }
 
-        // 4. Schedule Toggle
         function toggleSchedule(mode) {
             const liveBtn = document.getElementById('live-btn');
             const schedBtn = document.getElementById('sched-btn');
+            const now = Date.now();
             
             if (mode === 'live') {
                 liveBtn.className = 'bg-yellow-500 text-black px-8 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all active:scale-95';
                 schedBtn.className = 'text-muted px-8 py-2.5 rounded-full text-sm font-bold hover:text-yellow-500 transition-all active:scale-95';
+                renderCards(allMatches.filter(m => m.timestamp * 1000 <= now));
             } else {
                 schedBtn.className = 'bg-yellow-500 text-black px-8 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all active:scale-95';
                 liveBtn.className = 'text-muted px-8 py-2.5 rounded-full text-sm font-bold hover:text-yellow-500 transition-all active:scale-95';
+                renderCards(allMatches.filter(m => m.timestamp * 1000 > now));
             }
         }
 
         window.onload = () => {
             if (localStorage.getItem('theme') === 'light') toggleDarkMode();
+            initialize();
         };
     </script>
 
